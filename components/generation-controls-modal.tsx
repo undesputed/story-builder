@@ -1,187 +1,226 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { Sparkles, X } from 'lucide-react'
+import type { StoryFocus, StoryLength } from '@/components/story-poster-display'
+
+export interface GenerationControls {
+  tone: number
+  length: StoryLength
+  focus: StoryFocus
+}
 
 export interface GenerationControlsProps {
   isOpen: boolean
   onClose: () => void
   onGenerate: (controls: GenerationControls) => void
   isLoading?: boolean
+  nextVersion?: number
 }
 
-export interface GenerationControls {
-  tone: number
-  length: number
-  focus: number
-  version: string
-}
+const LENGTH_OPTIONS: { value: StoryLength; label: string; hint: string }[] = [
+  { value: 'short', label: 'Short', hint: 'Poster / card size' },
+  { value: 'medium', label: 'Medium', hint: 'Default detail' },
+  { value: 'long', label: 'Long', hint: 'Full page narrative' },
+]
+
+const FOCUS_OPTIONS: { value: StoryFocus; label: string; hint: string }[] = [
+  { value: 'value', label: 'Value', hint: 'Business & customer outcomes' },
+  { value: 'transformation', label: 'Transformation', hint: 'How the work changed' },
+  { value: 'people', label: 'People', hint: 'Learning, confidence, growth' },
+  { value: 'balanced', label: 'Balanced', hint: 'Even Before / After / Value / Next' },
+]
 
 export function GenerationControlsModal({
   isOpen,
   onClose,
   onGenerate,
   isLoading = false,
+  nextVersion = 1,
 }: GenerationControlsProps) {
-  const [tone, setTone] = useState(50)
-  const [length, setLength] = useState(50)
-  const [focus, setFocus] = useState(50)
-  const [version, setVersion] = useState('v1')
+  const [tone, setTone] = useState(30)
+  const [length, setLength] = useState<StoryLength>('medium')
+  const [focus, setFocus] = useState<StoryFocus>('balanced')
 
-  const handleGenerate = () => {
-    onGenerate({
-      tone,
-      length,
-      focus,
-      version,
-    })
-  }
+  useEffect(() => {
+    if (!isOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLoading) onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isOpen, isLoading, onClose])
 
   if (!isOpen) return null
 
+  const toneDescription =
+    tone < 34
+      ? 'Calm, factual, understated'
+      : tone < 67
+        ? 'Warm with a clear arc'
+        : 'Emotional, strong Before / After contrast'
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px]"
+      onClick={() => !isLoading && onClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="generation-title"
+        className="animate-fade-up flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border p-6 sticky top-0 bg-card">
+        <div className="flex shrink-0 items-start justify-between border-b border-border px-6 py-5">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Generation Controls</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Customize how your story is generated
+            <p className="font-mono text-[10px] tracking-[0.22em] text-muted-foreground uppercase">
+              Generation · 生成設定
+            </p>
+            <h2
+              id="generation-title"
+              className="mt-1.5 font-display text-xl font-bold text-card-foreground"
+            >
+              Compose your story
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Same facts, your choice of telling. Regenerate anytime.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            disabled={isLoading}
+            aria-label="Close"
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <X className="w-5 h-5" />
+            <X className="h-4.5 w-4.5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Controls */}
+        <div className="flex-1 space-y-7 overflow-y-auto px-6 py-6">
           {/* Tone */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-foreground">Tone</label>
-              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                {tone}%
-              </span>
+            <div className="flex items-baseline justify-between">
+              <label
+                htmlFor="tone-slider"
+                className="font-mono text-[11px] font-semibold tracking-[0.18em] text-card-foreground uppercase"
+              >
+                Tone
+              </label>
+              <span className="font-mono text-[11px] text-muted-foreground">{tone}</span>
             </div>
             <input
+              id="tone-slider"
               type="range"
               min="0"
               max="100"
               value={tone}
               onChange={(e) => setTone(parseInt(e.target.value))}
-              className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
               disabled={isLoading}
+              className="mt-3 w-full cursor-pointer accent-primary"
             />
-            <p className="text-xs text-muted-foreground mt-2">
-              {tone < 33
-                ? 'Formal and professional'
-                : tone < 66
-                ? 'Balanced tone'
-                : 'Casual and conversational'}
-            </p>
+            <div className="mt-1.5 flex justify-between text-[11px] text-muted-foreground">
+              <span>Natural · 自然</span>
+              <span>Dramatic · ドラマチック</span>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">{toneDescription}</p>
           </div>
 
           {/* Length */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-foreground">Length</label>
-              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                {length}%
-              </span>
+          <fieldset>
+            <legend className="font-mono text-[11px] font-semibold tracking-[0.18em] text-card-foreground uppercase">
+              Length
+            </legend>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {LENGTH_OPTIONS.map((option) => {
+                const selected = length === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setLength(option.value)}
+                    disabled={isLoading}
+                    aria-pressed={selected}
+                    className={`cursor-pointer rounded-xl border px-3 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      selected
+                        ? 'border-primary bg-accent'
+                        : 'border-border hover:bg-muted'
+                    }`}
+                  >
+                    <span
+                      className={`block text-sm font-medium ${
+                        selected ? 'text-accent-foreground' : 'text-card-foreground'
+                      }`}
+                    >
+                      {option.label}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                      {option.hint}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={length}
-              onChange={(e) => setLength(parseInt(e.target.value))}
-              className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              {length < 33
-                ? 'Concise and brief'
-                : length < 66
-                ? 'Moderate length'
-                : 'Detailed and comprehensive'}
-            </p>
-          </div>
+          </fieldset>
 
           {/* Focus */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-foreground">Focus</label>
-              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                {focus}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={focus}
-              onChange={(e) => setFocus(parseInt(e.target.value))}
-              className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              {focus < 33
-                ? 'Business impact focused'
-                : focus < 66
-                ? 'Balanced perspective'
-                : 'Personal growth focused'}
-            </p>
-          </div>
-
-          {/* Version */}
-          <div>
-            <label className="text-sm font-semibold text-foreground block mb-3">
-              Generation Version
-            </label>
-            <div className="space-y-2">
-              {['v1', 'v2', 'v3', 'v4', 'v5'].map((ver) => (
-                <label
-                  key={ver}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer hover:bg-muted/30 transition-colors"
-                >
-                  <input
-                    type="radio"
-                    name="version"
-                    value={ver}
-                    checked={version === ver}
-                    onChange={(e) => setVersion(e.target.value)}
+          <fieldset>
+            <legend className="font-mono text-[11px] font-semibold tracking-[0.18em] text-card-foreground uppercase">
+              Focus
+            </legend>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {FOCUS_OPTIONS.map((option) => {
+                const selected = focus === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFocus(option.value)}
                     disabled={isLoading}
-                    className="w-4 h-4 accent-primary cursor-pointer"
-                  />
-                  <span className="text-sm text-foreground font-medium">{ver}</span>
-                </label>
-              ))}
+                    aria-pressed={selected}
+                    className={`cursor-pointer rounded-xl border px-3.5 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      selected
+                        ? 'border-primary bg-accent'
+                        : 'border-border hover:bg-muted'
+                    }`}
+                  >
+                    <span
+                      className={`block text-sm font-medium ${
+                        selected ? 'text-accent-foreground' : 'text-card-foreground'
+                      }`}
+                    >
+                      {option.label}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">
+                      {option.hint}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
-          </div>
+          </fieldset>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border p-6 bg-muted/5 sticky bottom-0 space-y-2">
-          <Button
-            onClick={handleGenerate}
+        <div className="shrink-0 space-y-2.5 border-t border-border bg-muted/40 px-6 py-5">
+          <button
+            onClick={() => onGenerate({ tone, length, focus })}
             disabled={isLoading}
-            className="w-full bg-primary hover:bg-primary/90"
+            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
           >
-            {isLoading ? 'Generating...' : 'Generate Story'}
-          </Button>
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            {isLoading ? 'Composing…' : `Generate story · v${nextVersion}`}
+          </button>
           <Button
             onClick={onClose}
             disabled={isLoading}
-            variant="outline"
-            className="w-full"
+            variant="ghost"
+            className="h-10 w-full rounded-xl text-sm text-muted-foreground"
           >
-            Cancel
+            Not yet — keep talking
           </Button>
         </div>
       </div>

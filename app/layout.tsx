@@ -1,12 +1,34 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import { IBM_Plex_Mono, Shippori_Mincho, Zen_Kaku_Gothic_New } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
-import { ThemeToggle } from '@/components/theme-toggle'
 import './globals.css'
 
+const shippori = Shippori_Mincho({
+  weight: ['500', '600', '700', '800'],
+  subsets: ['latin'],
+  variable: '--font-shippori',
+  display: 'swap',
+})
+
+const zenKaku = Zen_Kaku_Gothic_New({
+  weight: ['400', '500', '700'],
+  subsets: ['latin'],
+  variable: '--font-zen-kaku',
+  display: 'swap',
+})
+
+const plexMono = IBM_Plex_Mono({
+  weight: ['400', '500', '600'],
+  subsets: ['latin'],
+  variable: '--font-plex-mono',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
-  title: 'New Work Stories - AI-Powered Story Collection',
-  description: 'Share your AI-driven work transformation stories with the PERSOL New Work Stories platform',
+  title: 'New Work Stories · 仕事のものがたり',
+  description:
+    'Share your AI-driven work transformation story — an interview that becomes a Before / After / Value / Next story sheet.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -30,12 +52,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#1f2937' },
+    { media: '(prefers-color-scheme: light)', color: '#f4f2ec' },
+    { media: '(prefers-color-scheme: dark)', color: '#14161c' },
   ],
   width: 'device-width',
   initialScale: 1,
-  userScalable: false,
 }
 
 export default function RootLayout({
@@ -44,12 +65,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="bg-background">
-      <body className="antialiased h-screen overflow-hidden">
-        <ThemeProvider>
-          <ThemeToggle />
-          {children}
-        </ThemeProvider>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`bg-background ${shippori.variable} ${zenKaku.variable} ${plexMono.variable}`}
+    >
+      <body className="antialiased min-h-dvh">
+        <ThemeProvider>{children}</ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
